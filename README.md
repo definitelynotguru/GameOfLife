@@ -6,10 +6,10 @@
 
 <p align="center">
 
-![License](https://img.shields.io/github/license/definitelynotguru/game-of-life?style=flat)
-![Stars](https://img.shields.io/github/stars/definitelynotguru/game-of-life?style=flat)
-![Forks](https://img.shields.io/github/forks/definitelynotguru/game-of-life?style=flat)
-![Issues](https://img.shields.io/github/issues/definitelynotguru/game-of-life?style=flat)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)
+![No Dependencies](https://img.shields.io/badge/dependencies-none?style=flat&color=%2300FF41)
 
 </p>
 
