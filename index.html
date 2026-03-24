@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conway's Game of Life</title>
+  <style>
+    /* --- Reset & base ---------------------------------------- */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0D0D0D;
+      --panel:     #141414;
+      --border:    #1f1f1f;
+      --green:     #00FF41;
+      --green-dim: #005C1A;
+      --text:      #a0a0a0;
+      --text-dim:  #404040;
+      --btn-bg:    #1a1a1a;
+      --btn-hover: #222;
+      --active:    #00FF41;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 13px;
+      overflow: hidden; /* no page scroll — everything fits in viewport */
+    }
+
+    /* --- Layout ---------------------------------------------- */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* Canvas takes up all available space above the control panel */
+    #canvas-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      cursor: crosshair;
+    }
+
+    canvas { display: block; }
+
+    /* Generation counter overlaid on canvas, top-left */
+    #gen-display {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      color: var(--green-dim);
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      pointer-events: none; /* don't block canvas clicks */
+      user-select: none;
+    }
+
+    /* --- Control panel --------------------------------------- */
+    #controls {
+      flex-shrink: 0;
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      padding: 10px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      align-items: flex-start;
+    }
+
+    .ctrl-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .ctrl-label {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    /* --- Buttons --------------------------------------------- */
+    button {
+      background: var(--btn-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 5px 10px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    button:hover {
+      background: var(--btn-hover);
+      border-color: var(--green-dim);
+      color: var(--green);
+    }
+
+    /* Primary action button (Start/Pause) */
+    #btn-start {
+      border-color: var(--green-dim);
+      color: var(--green);
+      min-width: 60px;
+    }
+
+    #btn-start:hover {
+      background: #0a1a0a;
+    }
+
+    /* Active state for toggle buttons like Monsoon */
+    .btn-active {
+      border-color: var(--green) !important;
+      color: var(--green) !important;
+      background: #0a1a0a !important;
+    }
+
+    /* --- Sliders --------------------------------------------- */
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .slider-name {
+      font-size: 11px;
+      color: var(--text);
+      min-width: 72px;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 90px;
+      height: 2px;
+      background: var(--border);
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 10px;
+      height: 10px;
+      background: var(--green-dim);
+      cursor: pointer;
+      border-radius: 0; /* keep the terminal square feel */
+    }
+
+    input[type="range"]:hover::-webkit-slider-thumb {
+      background: var(--green);
+    }
+
+    .slider-val {
+      font-size: 11px;
+      color: var(--green-dim);
+      min-width: 18px;
+      text-align: right;
+    }
+
+    /* --- Responsive: stack on narrow screens ----------------- */
+    @media (max-width: 540px) {
+      #controls {
+        overflow-y: auto;
+        max-height: 45vh;
+        padding: 8px 10px;
+        gap: 8px 12px;
+      }
+
+      input[type="range"] { width: 70px; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Canvas fills remaining height -->
+  <div id="canvas-container">
+    <canvas id="canvas"></canvas>
+    <div id="gen-display">gen <span id="gen-count">0</span></div>
+  </div>
+
+  <!-- Control panel -->
+  <div id="controls">
+
+    <!-- Simulation controls -->
+    <div class="ctrl-group">
+      <div class="ctrl-label">Simulation</div>
+      <div class="btn-row">
+        <button id="btn-start">Start</button>
+        <button id="btn-step" title="Advance one generation">Step</button>
+        <button id="btn-random">Random</button>
+        <button id="btn-clear">Clear</button>
+      </div>
+    </div>
+
+    <!-- Patterns -->
+    <div class="ctrl-group">
+      <div class="ctrl-label">Patterns</div>
+      <div class="btn-row">
+        <button data-pattern="glider"  title="Moves diagonally — a minimal spaceship">Glider</button>
+        <button data-pattern="blinker" title="Simplest oscillator — flips every 2 gens">Blinker</button>
+        <button data-pattern="pulsar"  title="Large period-3 oscillator">Pulsar</button>
+        <button data-pattern="block"   title="2×2 still life — never changes">Block</button>
+        <button data-pattern="beehive" title="6-cell still life">Beehive</button>
+      </div>
+    </div>
+
+    <!-- Speed slider -->
+    <div class="ctrl-group">
+      <div class="ctrl-label">Speed</div>
+      <div class="slider-row">
+        <span class="slider-name">FPS</span>
+        <input id="slider-speed" type="range" min="1" max="30" value="10">
+        <span class="slider-val" id="val-speed">10</span>
+      </div>
+    </div>
+
+    <!-- Rule sliders (the Mumbai experiment controls) -->
+    <div class="ctrl-group">
+      <div class="ctrl-label">Rules</div>
+      <div class="slider-row">
+        <span class="slider-name" title="Dead cell born with exactly N neighbors">Birth =</span>
+        <input id="slider-birth" type="range" min="1" max="5" value="3">
+        <span class="slider-val" id="val-birth">3</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-name" title="Live cell survives with ≥ N neighbors">Survive ≥</span>
+        <input id="slider-surv-min" type="range" min="0" max="5" value="2">
+        <span class="slider-val" id="val-surv-min">2</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-name" title="Live cell survives with ≤ N neighbors">Survive ≤</span>
+        <input id="slider-surv-max" type="range" min="0" max="8" value="3">
+        <span class="slider-val" id="val-surv-max">3</span>
+      </div>
+    </div>
+
+    <!-- Monsoon mode -->
+    <div class="ctrl-group">
+      <div class="ctrl-label">Experiment</div>
+      <div class="btn-row">
+        <button id="btn-monsoon" title="Random ~0.3% cell deaths per gen — models monsoons, evictions, disease">Monsoon</button>
+      </div>
+    </div>
+
+  </div><!-- /controls -->
+</div><!-- /app -->
+
+<script src="script.js"></script>
+</body>
+</html>
