@@ -47,6 +47,18 @@
 
     canvas { display: block; }
 
+    /* Population graph sits at the bottom of the canvas container */
+    #pop-canvas {
+      display: block;
+      width: 100%;
+      height: 80px;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
     /* Generation counter overlaid on canvas, top-left */
     #gen-display {
       position: absolute;
@@ -188,7 +200,8 @@
   <!-- Canvas fills remaining height -->
   <div id="canvas-container">
     <canvas id="canvas"></canvas>
-    <div id="gen-display">gen <span id="gen-count">0</span></div>
+    <canvas id="pop-canvas"></canvas>
+    <div id="gen-display">gen <span id="gen-count">0</span> · pop <span id="pop-count">0</span></div>
   </div>
 
   <!-- Control panel -->
@@ -213,7 +226,10 @@
         <button data-pattern="blinker" title="Simplest oscillator — flips every 2 gens">Blinker</button>
         <button data-pattern="pulsar"  title="Large period-3 oscillator">Pulsar</button>
         <button data-pattern="block"   title="2×2 still life — never changes">Block</button>
-        <button data-pattern="beehive" title="6-cell still life">Beehive</button>
+        <button data-pattern="beehive"    title="6-cell still life">Beehive</button>
+        <button data-pattern="lwss"       title="Horizontal 9-cell spaceship">LWSS</button>
+        <button data-pattern="gliderGun" title="Gosper Glider Gun — infinite growth">Glider Gun</button>
+        <button data-pattern="eater"      title="Absorbs gliders, stays intact">Eater</button>
       </div>
     </div>
 
@@ -244,6 +260,12 @@
         <span class="slider-name" title="Live cell survives with ≤ N neighbors">Survive ≤</span>
         <input id="slider-surv-max" type="range" min="0" max="8" value="3">
         <span class="slider-val" id="val-surv-max">3</span>
+      </div>
+      <div class="btn-row">
+        <button data-preset="conway"   title="Standard Conway B3/S23">Conway</button>
+        <button data-preset="highlife" title="B36/S23 — has replicators">HighLife</button>
+        <button data-preset="seeds"    title="B2/S — everything explodes">Seeds</button>
+        <button data-preset="daynight" title="B3678/S34678 — symmetric stable">Day&amp;Night</button>
       </div>
     </div>
 
